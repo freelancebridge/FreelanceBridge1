@@ -3,8 +3,8 @@ const nextConfig = {
   typescript: { ignoreBuildErrors: true },
   eslint: { ignoreDuringBuilds: true },
   images: { unoptimized: true },
-  // Это отключит генерацию страниц, требующих базу данных, во время сборки
-  output: 'standalone'
+  // Это отключит Turbopack и заставит использовать стандартный сборщик
+  swcMinify: true,
 };
 
 export default nextConfig;
