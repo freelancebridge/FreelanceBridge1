@@ -1,11 +1,19 @@
 import { PrismaClient } from '@prisma/client'
-import { PrismaLibSql } from '@prisma/adapter-libsql'
 
-const adapter = new PrismaLibSql({
-    url: process.env.DATABASE_URL || 'file:./dev.db',
-})
+// Ստեղծում ենք Prisma Client-ի մեկ օրինակ (Singleton), որպեսզի 
+// տվյալների բազայի հետ կապերը չափից շատ չլինեն:
+const prismaClientSingleton = () => {
+  return new PrismaClient()
+}
 
-const globalWithPrisma = global as typeof globalThis & { prisma: PrismaClient }
-export const prisma = globalWithPrisma.prisma || new PrismaClient({ adapter })
+declare global {
+  var prisma: undefined | ReturnType<typeof prismaClientSingleton>
+}
 
-if (process.env.NODE_ENV !== 'production') globalWithPrisma.prisma = prisma
+// Օգտագործում ենք global ստեկը, որպեսզի Next.js-ի վերագործարկման ժամանակ կապը չկորչի
+const prisma = globalThis.prisma ?? prismaClientSingleton()
+
+export default prisma
+
+// Production միջավայրում սա կլինի հիմնական կապը
+if (process.env.NODE_ENV !== 'production') globalThis.prisma = prisma
