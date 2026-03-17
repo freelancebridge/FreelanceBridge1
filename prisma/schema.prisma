@@ -1,5 +1,5 @@
 // This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
+// learn more about it in the docs: https://pris.ly
 
 generator client {
   provider        = "prisma-client-js"
@@ -79,7 +79,7 @@ model Job {
   category    String
   status      String   @default("OPEN") // "OPEN", "IN_PROGRESS", "COMPLETED", "CANCELLED"
   
-  createdAt   DateTime @now()
+  createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
   // Relations
@@ -97,7 +97,7 @@ model Application {
   bidAmount   Float
   status      String   @default("PENDING") // "PENDING", "ACCEPTED", "REJECTED"
   
-  createdAt   DateTime @now()
+  createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
   // Relations
@@ -112,7 +112,7 @@ model Message {
   content     String
   isRead      Boolean  @default(false)
   
-  createdAt   DateTime @now()
+  createdAt   DateTime @default(now())
 
   // Relations
   senderId    String
@@ -127,7 +127,7 @@ model Payment {
   stripeId      String?  // Stripe PaymentIntent ID
   status        String   @default("HELD") // "HELD", "RELEASED", "REFUNDED"
   
-  createdAt     DateTime @now()
+  createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
   // Relations
@@ -144,7 +144,7 @@ model Review {
   rating      Int      // 1-5
   comment     String
   
-  createdAt   DateTime @now()
+  createdAt   DateTime @default(now())
 
   // Relations
   jobId       String
@@ -162,7 +162,7 @@ model Notification {
   isRead      Boolean  @default(false)
   linkUrl     String?
   
-  createdAt   DateTime @now()
+  createdAt   DateTime @default(now())
 
   // Relations
   userId      String
