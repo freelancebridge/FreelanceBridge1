@@ -10,8 +10,7 @@
     "lint": "next lint"
   },
   "dependencies": {
-    "@prisma/adapter-libsql": "^7.5.0",
-    "@prisma/client": "^5.10.0",
+    "@prisma/client": "^5.22.0",
     "autoprefixer": "^10.4.27",
     "bcryptjs": "^2.4.3",
     "date-fns": "^4.1.0",
