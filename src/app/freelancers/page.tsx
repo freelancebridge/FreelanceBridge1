@@ -8,27 +8,34 @@ export const dynamic = 'force-dynamic';
 export default async function FreelancersList({ searchParams }: { searchParams: Promise<{ q?: string }> }) {
     const q = (await searchParams).q || '';
 
-    const dbUsers = await prisma.user.findMany({
-        where: {
-            role: 'FREELANCER',
-            isBanned: false,
-            ...(q ? {
-                OR: [
-                    { name: { contains: q } },
-                    { title: { contains: q } },
-                    { skills: { contains: q } }
-                ]
-            } : {})
-        },
-        include: {
-            reviewsReceived: true
+    const dbUsers = await (async () => {
+        try {
+            return await prisma.user.findMany({
+                where: {
+                    role: 'FREELANCER',
+                    isBanned: false,
+                    ...(q ? {
+                        OR: [
+                            { name: { contains: q, mode: 'insensitive' } },
+                            { title: { contains: q, mode: 'insensitive' } },
+                            { skills: { contains: q, mode: 'insensitive' } }
+                        ]
+                    } : {})
+                },
+                include: {
+                    reviewsReceived: true
+                }
+            });
+        } catch (error) {
+            console.error('Database connection error in FreelancersList:', error);
+            return [];
         }
-    });
+    })();
 
-    const wizards = dbUsers.map(user => {
+    const wizards = dbUsers.map((user: any) => {
         const ratingCount = user.reviewsReceived.length;
         const avgRating = ratingCount > 0
-            ? user.reviewsReceived.reduce((sum, r) => sum + r.rating, 0) / ratingCount
+            ? user.reviewsReceived.reduce((sum: number, r: any) => sum + r.rating, 0) / ratingCount
             : 5.0; // default rating if none
 
         return {
@@ -38,7 +45,7 @@ export default async function FreelancersList({ searchParams }: { searchParams: 
             rate: user.hourlyRate ? `$${user.hourlyRate}/hr` : 'Negotiable',
             rating: avgRating.toFixed(1),
             earned: ratingCount > 0 ? `${ratingCount} jobs` : 'New',
-            skills: user.skills ? user.skills.split(',').map(s => s.trim()) : ['Adaptable']
+            skills: user.skills ? user.skills.split(',').map((s: string) => s.trim()) : ['Adaptable']
         };
     });
 
@@ -94,7 +101,7 @@ export default async function FreelancersList({ searchParams }: { searchParams: 
                                     </div>
 
                                     <div className="flex flex-wrap gap-2 mt-auto relative z-10">
-                                        {freelancer.skills.map(skill => (
+                                        {freelancer.skills.map((skill: string) => (
                                             <span key={skill} className="bg-purple-900/40 text-purple-300 border border-purple-700/50 text-xs px-3 py-1.5 rounded-full font-semibold group-hover:border-purple-500/50 transition-colors">
                                                 {skill}
                                             </span>
