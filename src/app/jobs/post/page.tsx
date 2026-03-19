@@ -1,4 +1,47 @@
+"use client";
+import { useState } from 'react';
+import { useRouter } from 'next/navigation';
+
 export default function PostJob() {
+    const router = useRouter();
+    const [formData, setFormData] = useState({ title: '', skills: '', description: '', jobType: 'FIXED', budgetFrom: '', budgetTo: '' });
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState('');
+
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setLoading(true);
+        setError('');
+        
+        try {
+            const res = await fetch('/api/jobs', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    title: formData.title,
+                    description: formData.description,
+                    budget: formData.budgetTo || formData.budgetFrom || '0',
+                    jobType: formData.jobType,
+                    category: formData.skills || 'General'
+                })
+            });
+
+            if (!res.ok) {
+                const data = await res.json();
+                setError(data.error || 'Failed to create gig');
+                setLoading(false);
+                return;
+            }
+
+            const data = await res.json();
+            router.push(`/jobs/${data.id}`);
+            router.refresh();
+        } catch (err) {
+            setError('An error occurred. Please try again.');
+            setLoading(false);
+        }
+    };
+
     return (
         <div className="bg-gray-50 min-h-screen py-10">
             <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -7,7 +50,8 @@ export default function PostJob() {
                     <p className="text-lg text-gray-600 mt-3 max-w-2xl mx-auto">Drop the details below and we'll match you with the perfect creator to bring your vision to life.</p>
                 </div>
 
-                <form className="space-y-8">
+                <form className="space-y-8" onSubmit={handleSubmit}>
+                    {error && <div className="bg-red-50 text-red-600 p-4 rounded-xl text-sm font-bold border border-red-100 max-w-4xl mx-auto">{error}</div>}
                     {/* Headline */}
                     <div className="bg-white rounded-3xl shadow-sm border border-purple-100 p-8 md:p-10 hover:shadow-md transition-shadow">
                         <h2 className="text-2xl font-extrabold text-gray-900 mb-2">Give your gig a catchy name.</h2>
@@ -17,6 +61,9 @@ export default function PostJob() {
                                 type="text"
                                 id="title"
                                 name="title"
+                                required
+                                value={formData.title}
+                                onChange={(e) => setFormData({...formData, title: e.target.value})}
                                 className="w-full border-2 border-gray-200 rounded-xl px-5 py-4 focus:outline-none focus:ring-4 focus:ring-purple-100 focus:border-purple-500 text-gray-900 text-lg transition-all"
                                 placeholder="e.g. Build an insanely fast Next.js landing page"
                             />
@@ -41,6 +88,9 @@ export default function PostJob() {
                                     type="text"
                                     id="skills"
                                     name="skills"
+                                    required
+                                    value={formData.skills}
+                                    onChange={(e) => setFormData({...formData, skills: e.target.value})}
                                     className="w-full border-2 border-gray-200 rounded-xl px-5 py-4 focus:outline-none focus:ring-4 focus:ring-purple-100 focus:border-purple-500 text-gray-900 text-lg transition-all"
                                     placeholder="Type to search superpowers..."
                                 />
@@ -75,6 +125,9 @@ export default function PostJob() {
                                 id="description"
                                 name="description"
                                 rows={6}
+                                required
+                                value={formData.description}
+                                onChange={(e) => setFormData({...formData, description: e.target.value})}
                                 className="w-full border-2 border-gray-200 rounded-xl px-5 py-4 focus:outline-none focus:ring-4 focus:ring-purple-100 focus:border-purple-500 text-gray-900 text-lg transition-all reszie-y font-medium"
                                 placeholder="Once upon a time, we had this amazing idea to build..."
                             />
@@ -95,25 +148,30 @@ export default function PostJob() {
                         <p className="text-base text-gray-500 mb-8 font-medium relative z-10">We'll make sure you only meet folks who fit your budget vibes.</p>
 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-10 relative z-10">
-                            <label className="bg-white/60 backdrop-blur-md border border-gray-200 rounded-3xl p-6 cursor-pointer relative shadow-sm flex items-center justify-between transform transition-all hover:-translate-y-1 hover:border-purple-400 group overflow-hidden opacity-90 hover:opacity-100">
+                            <label className={`bg-white/60 backdrop-blur-md border rounded-3xl p-6 cursor-pointer relative shadow-sm flex items-center justify-between transform transition-all group overflow-hidden ${formData.jobType === 'HOURLY' ? 'border-purple-500 ring-2 ring-purple-200 opacity-100 -translate-y-1' : 'border-gray-200 opacity-90 hover:opacity-100 hover:-translate-y-1 hover:border-purple-400'}`}>
+                                <input type="radio" value="HOURLY" checked={formData.jobType === 'HOURLY'} onChange={() => setFormData({...formData, jobType: 'HOURLY'})} className="sr-only" />
                                 <div className="relative z-10">
                                     <div className="flex items-center mb-2">
                                         <span className="font-extrabold text-gray-900 text-xl">By the hour</span>
                                     </div>
                                     <p className="text-sm text-gray-500 font-medium">Perfect for ongoing or unpredictable work.</p>
                                 </div>
-                                <div className="w-7 h-7 rounded-full border border-gray-300 flex items-center justify-center bg-gray-50 relative z-10">
+                                <div className={`w-7 h-7 rounded-full border flex items-center justify-center relative z-10 ${formData.jobType === 'HOURLY' ? 'border-purple-500 bg-purple-500' : 'border-gray-300 bg-gray-50'}`}>
+                                    {formData.jobType === 'HOURLY' && <div className="w-2.5 h-2.5 bg-white rounded-full"></div>}
                                 </div>
                             </label>
 
-                            <label className="bg-white/60 backdrop-blur-md border border-gray-200 rounded-3xl p-6 cursor-pointer relative shadow-sm flex items-center justify-between transform transition-all hover:-translate-y-1 hover:border-purple-400 group overflow-hidden opacity-90 hover:opacity-100">
+                            <label className={`bg-white/60 backdrop-blur-md border rounded-3xl p-6 cursor-pointer relative shadow-sm flex items-center justify-between transform transition-all group overflow-hidden ${formData.jobType === 'FIXED' ? 'border-purple-500 ring-2 ring-purple-200 opacity-100 -translate-y-1' : 'border-gray-200 opacity-90 hover:opacity-100 hover:-translate-y-1 hover:border-purple-400'}`}>
+                                <input type="radio" value="FIXED" checked={formData.jobType === 'FIXED'} onChange={() => setFormData({...formData, jobType: 'FIXED'})} className="sr-only" />
                                 <div className="relative z-10">
                                     <div className="flex items-center mb-2">
                                         <span className="font-extrabold text-gray-900 text-xl">Fixed price</span>
                                     </div>
                                     <p className="text-sm text-gray-500 font-medium">One clear price for the entire project.</p>
                                 </div>
-                                <div className="w-7 h-7 rounded-full border border-gray-300 bg-gray-50 relative z-10"></div>
+                                <div className={`w-7 h-7 rounded-full border flex items-center justify-center relative z-10 ${formData.jobType === 'FIXED' ? 'border-purple-500 bg-purple-500' : 'border-gray-300 bg-gray-50'}`}>
+                                    {formData.jobType === 'FIXED' && <div className="w-2.5 h-2.5 bg-white rounded-full"></div>}
+                                </div>
                             </label>
                         </div>
 
@@ -124,9 +182,9 @@ export default function PostJob() {
                                     <div className="absolute inset-y-0 left-0 pl-5 flex items-center pointer-events-none">
                                         <span className="text-gray-500 text-xl font-bold">$</span>
                                     </div>
-                                    <input type="number" className="w-full border-2 border-gray-200 rounded-xl pl-10 pr-12 py-4 focus:outline-none focus:ring-4 focus:ring-purple-100 focus:border-purple-500 text-gray-900 text-right text-xl font-bold bg-white" placeholder="25.00" defaultValue="40.00" />
+                                    <input type="number" required value={formData.budgetFrom} onChange={(e) => setFormData({...formData, budgetFrom: e.target.value})} className="w-full border-2 border-gray-200 rounded-xl pl-10 pr-12 py-4 focus:outline-none focus:ring-4 focus:ring-purple-100 focus:border-purple-500 text-gray-900 text-right text-xl font-bold bg-white" placeholder="25.00" />
                                     <div className="absolute inset-y-0 right-0 pr-5 flex items-center pointer-events-none">
-                                        <span className="text-gray-400 font-bold">/hr</span>
+                                        <span className="text-gray-400 font-bold">{formData.jobType === 'HOURLY' ? '/hr' : ''}</span>
                                     </div>
                                 </div>
                             </div>
@@ -136,9 +194,9 @@ export default function PostJob() {
                                     <div className="absolute inset-y-0 left-0 pl-5 flex items-center pointer-events-none">
                                         <span className="text-gray-500 text-xl font-bold">$</span>
                                     </div>
-                                    <input type="number" className="w-full border-2 border-gray-200 rounded-xl pl-10 pr-12 py-4 focus:outline-none focus:ring-4 focus:ring-purple-100 focus:border-purple-500 text-gray-900 text-right text-xl font-bold bg-white" placeholder="65.00" defaultValue="80.00" />
+                                    <input type="number" required value={formData.budgetTo} onChange={(e) => setFormData({...formData, budgetTo: e.target.value})} className="w-full border-2 border-gray-200 rounded-xl pl-10 pr-12 py-4 focus:outline-none focus:ring-4 focus:ring-purple-100 focus:border-purple-500 text-gray-900 text-right text-xl font-bold bg-white" placeholder="65.00" />
                                     <div className="absolute inset-y-0 right-0 pr-5 flex items-center pointer-events-none">
-                                        <span className="text-gray-400 font-bold">/hr</span>
+                                        <span className="text-gray-400 font-bold">{formData.jobType === 'HOURLY' ? '/hr' : ''}</span>
                                     </div>
                                 </div>
                             </div>
@@ -149,8 +207,8 @@ export default function PostJob() {
                         <button type="button" className="px-10 py-4 bg-white text-gray-500 font-bold rounded-full border-2 border-gray-200 hover:bg-gray-50 hover:text-gray-800 transition-colors text-lg w-full sm:w-auto">
                             Nevermind
                         </button>
-                        <button type="button" className="px-10 py-4 bg-gradient-to-r from-purple-600 to-orange-500 text-white font-bold rounded-full hover:from-purple-500 hover:to-orange-400 shadow-xl transition-transform transform hover:-translate-y-1 text-lg flex items-center justify-center w-full sm:w-auto">
-                            Launch the Gig
+                        <button type="submit" disabled={loading} className="px-10 py-4 bg-gradient-to-r from-purple-600 to-orange-500 text-white font-bold rounded-full hover:from-purple-500 hover:to-orange-400 shadow-xl transition-transform transform hover:-translate-y-1 text-lg flex items-center justify-center w-full sm:w-auto disabled:opacity-70">
+                            {loading ? 'Launching...' : 'Launch the Gig'}
                         </button>
                     </div>
                 </form>

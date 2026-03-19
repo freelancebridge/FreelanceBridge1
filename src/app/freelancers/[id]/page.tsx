@@ -1,39 +1,18 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
+import prisma from '@/lib/prisma';
 
 export const dynamic = 'force-dynamic';
 
 export default async function FreelancerProfile({ params }: { params: Promise<{ id: string }> }) {
     const { id } = await params;
 
-    const mockFreelancers = {
-        '1': {
-            id: '1',
-            name: 'Alice Cooper',
-            role: 'FREELANCER',
-            title: 'Full Stack Wizard',
-            hourlyRate: 85,
-            skills: 'React, Node.js, Prisma',
-            bio: 'Senior full-stack developer with 5+ years of experience building scalable applications.',
-            reviewsReceived: [
-                { id: 'r1', rating: 5, comment: 'Amazing work!', job: { title: 'Dashboard App' }, createdAt: new Date() },
-                { id: 'r2', rating: 4, comment: 'Good communication.', job: { title: 'Bug fixes' }, createdAt: new Date() }
-            ],
-            jobsPosted: []
+    const freelancer = await prisma.user.findUnique({
+        where: { id },
+        include: {
+            reviewsReceived: { include: { job: true } }
         }
-    };
-
-    const freelancer = mockFreelancers[id as keyof typeof mockFreelancers] || {
-        id,
-        name: 'Mock Freelancer',
-        role: 'FREELANCER',
-        title: 'Mock Title',
-        hourlyRate: 100,
-        skills: 'Mock, Skills',
-        bio: 'This is a mocked profile because the database is currently disabled. Enjoy this static placeholder text.',
-        reviewsReceived: [],
-        jobsPosted: []
-    };
+    });
 
     if (!freelancer || freelancer.role !== 'FREELANCER') {
         notFound();

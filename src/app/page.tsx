@@ -3,6 +3,8 @@
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 
+import Network from '@/components/Network';
+
 export default function Home() {
   const categories = [
     { name: 'Code & Magic', rating: '4.9/5', skills: 1850 },
@@ -61,29 +63,23 @@ export default function Home() {
                 </div>
               </div>
             </div>
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 0.8, delay: 0.2 }}
-              className="hidden md:block relative h-[500px] w-full rounded-3xl overflow-hidden shadow-2xl transform rotate-2 hover:rotate-0 transition-transform duration-500 group"
-            >
-              <div className="absolute inset-0 bg-gradient-to-tr from-orange-500 to-purple-600 flex flex-col items-center justify-center text-white p-8">
-
-                {/* Animated Abstract Geometric Element */}
-                <div className="relative w-48 h-48 mb-8 flex items-center justify-center">
-                  {/* Glowing background blob */}
-                  <div className="absolute inset-0 bg-yellow-300 rounded-full mix-blend-screen filter blur-2xl opacity-60 animate-blob-pulse will-change-transform"></div>
-
-                  {/* Floating solid orb */}
-                  <div className="absolute inset-0 m-auto w-20 h-20 rounded-full bg-[radial-gradient(circle_at_center,_#ffffff_0%,_#fffac9_30%,_#ffb703_100%)] shadow-[0_0_20px_10px_rgba(255,255,200,0.8),_0_0_60px_30px_rgba(255,200,50,0.5),_0_0_100px_60px_rgba(255,150,0,0.3)] animate-[sun-pulse_4s_ease-in-out_infinite] will-change-transform z-10"></div>
+            <div className="hidden md:flex flex-col items-center justify-center w-full">
+              <motion.div
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ duration: 0.8, delay: 0.2 }}
+                className="relative h-[350px] w-full rounded-3xl overflow-hidden shadow-2xl mb-8 group"
+              >
+                <div className="absolute inset-0 bg-gradient-to-tr from-orange-500 to-purple-600 overflow-hidden">
+                  <Network />
                 </div>
+              </motion.div>
 
-                <div className="text-center translate-y-4 group-hover:-translate-y-2 transition-transform duration-500">
-                  <h3 className="text-4xl font-extrabold mb-4 tracking-tight drop-shadow-md">Launch faster</h3>
-                  <p className="text-xl text-purple-100 font-medium max-w-xs drop-shadow">Access top 1% creators curated just for you.</p>
-                </div>
+              <div className="text-center transition-transform duration-500 relative z-10 pointer-events-none">
+                <h3 className="text-4xl font-extrabold mb-4 tracking-tight drop-shadow-md text-white">Launch faster</h3>
+                <p className="text-xl text-purple-100 font-medium max-w-xs drop-shadow mx-auto">Access top 1% creators curated just for you.</p>
               </div>
-            </motion.div>
+            </div>
           </div>
         </div>
       </section>

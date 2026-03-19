@@ -3,59 +3,33 @@ import { formatDistanceToNow } from 'date-fns';
 
 import { Suspense } from 'react';
 import SearchInput from '@/components/SearchInput';
+import prisma from '@/lib/prisma';
 
 export const dynamic = 'force-dynamic';
 
 export default async function JobsList({ searchParams }: { searchParams: Promise<{ q?: string }> }) {
     const q = (await searchParams).q || '';
 
-    const allJobs = [
-        {
-            id: 'job-1',
-            title: 'Build a Next.js MVP',
+    const dbJobs = await prisma.job.findMany({
+        where: {
             status: 'OPEN',
-            description: 'Looking for an experienced Next.js developer to build a MVP for our startup.',
-            category: 'Web Development',
-            jobType: 'FIXED',
-            budget: 5000,
-            createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 2),
-            client: { name: 'Acme Corp', companyName: 'Acme Corporation' }
+            ...(q ? {
+                OR: [
+                    { title: { contains: q } },
+                    { description: { contains: q } },
+                    { category: { contains: q } }
+                ]
+            } : {})
         },
-        {
-            id: 'job-2',
-            title: 'Design Logo and Branding',
-            status: 'OPEN',
-            description: 'Need a creative designer to establish our brand identity and design a modern logo.',
-            category: 'Design',
-            jobType: 'HOURLY',
-            budget: 50,
-            createdAt: new Date(Date.now() - 1000 * 60 * 60 * 5),
-            client: { name: 'Tech Innovations', companyName: '' }
+        include: {
+            client: true
         },
-        {
-            id: 'job-3',
-            title: 'Smart Contract Audit',
-            status: 'OPEN',
-            description: 'We need a security expert to audit our Solidity smart contracts before mainnet launch.',
-            category: 'Blockchain',
-            jobType: 'FIXED',
-            budget: 10000,
-            createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 5),
-            client: { name: 'DeFi protocol', companyName: 'DeFi protocol' }
+        orderBy: {
+            createdAt: 'desc'
         }
-    ];
-
-    const rawJobs = allJobs.filter(job => {
-        if (!q) return true;
-        const search = q.toLowerCase();
-        return (
-            (job.title && job.title.toLowerCase().includes(search)) ||
-            (job.description && job.description.toLowerCase().includes(search)) ||
-            (job.category && job.category.toLowerCase().includes(search))
-        );
     });
 
-    const gigs = rawJobs.map(job => ({
+    const gigs = dbJobs.map(job => ({
         id: job.id,
         title: job.title,
         client: job.client.companyName || job.client.name || 'Anonymous Client',

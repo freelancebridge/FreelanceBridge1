@@ -1,63 +1,29 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { formatDistanceToNow } from 'date-fns';
+import prisma from '@/lib/prisma';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/app/api/auth/[...nextauth]/route';
+import ApplicationForm from '@/components/ApplicationForm';
 
 export const dynamic = 'force-dynamic';
 
 export default async function JobProfile({ params }: { params: Promise<{ id: string }> }) {
     const { id } = await params;
 
-    const mockJobs = {
-        'job-1': {
-            id: 'job-1',
-            title: 'Build a Next.js MVP',
-            status: 'OPEN',
-            description: 'Looking for an experienced Next.js developer to build a MVP for our startup. You will be working closely with the founding team to iterate rapidly based on user feedback. The stack is Next.js, Tailwind, Prisma, and PostgreSQL.',
-            category: 'Web Development',
-            jobType: 'FIXED',
-            budget: 5000,
-            createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 2),
-            client: { id: 'client-1', name: 'Acme Corp', companyName: 'Acme Corporation', image: null, createdAt: new Date('2022-01-01') },
-            _count: { applications: 5 }
-        },
-        'job-2': {
-            id: 'job-2',
-            title: 'Design Logo and Branding',
-            status: 'OPEN',
-            description: 'Need a creative designer to establish our brand identity and design a modern logo. We are a crypto startup and want something sleek, neon, and futuristic.',
-            category: 'Design',
-            jobType: 'HOURLY',
-            budget: 50,
-            createdAt: new Date(Date.now() - 1000 * 60 * 60 * 5),
-            client: { id: 'client-2', name: 'Tech Innovations', companyName: '', image: null, createdAt: new Date('2023-05-15') },
-            _count: { applications: 12 }
-        },
-        'job-3': {
-            id: 'job-3',
-            title: 'Smart Contract Audit',
-            status: 'OPEN',
-            description: 'We need a security expert to audit our Solidity smart contracts before mainnet launch. Experience with DeFi protocols is a must.',
-            category: 'Blockchain',
-            jobType: 'FIXED',
-            budget: 10000,
-            createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 5),
-            client: { id: 'client-3', name: 'DeFi protocol', companyName: 'DeFi protocol', image: null, createdAt: new Date('2021-11-20') },
-            _count: { applications: 2 }
+    const job = await prisma.job.findUnique({
+        where: { id },
+        include: {
+            client: true,
+            applications: {
+                include: { freelancer: true },
+                orderBy: { createdAt: 'desc' }
+            },
+            _count: {
+                select: { applications: true }
+            }
         }
-    };
-
-    const job = mockJobs[id as keyof typeof mockJobs] || {
-        id,
-        title: 'Mock Job Title',
-        status: 'OPEN',
-        description: 'This is a mock job description because the database is currently disabled. Please enjoy this static placeholder text while we perform maintenance.',
-        category: 'Miscellaneous',
-        jobType: 'FIXED',
-        budget: 1000,
-        createdAt: new Date(),
-        client: { id: 'client-mock', name: 'Mock Client', companyName: 'Mock Company', image: null, createdAt: new Date() },
-        _count: { applications: 0 }
-    };
+    });
 
     if (!job) {
         notFound();
@@ -68,6 +34,11 @@ export default async function JobProfile({ params }: { params: Promise<{ id: str
 
     // Simulate skills parsing if category holds the main tag and description has others
     const skills = [job.category];
+
+    const session = await getServerSession(authOptions);
+    const isOwner = session?.user?.id === job.clientId;
+    const isFreelancer = session?.user?.role === 'FREELANCER';
+    const hasApplied = isFreelancer ? job.applications.some(app => app.freelancerId === session?.user?.id) : false;
 
     return (
         <div className="bg-indigo-50 min-h-screen py-10">
@@ -123,12 +94,46 @@ export default async function JobProfile({ params }: { params: Promise<{ id: str
                                 <p className="text-sm text-gray-500">Verified Client • Member since {new Date(job.client.createdAt).getFullYear()}</p>
                             </div>
                         </div>
-                        <Link href={`/messages/new?jobId=${job.id}&to=${job.client.id}`} className="w-full sm:w-auto bg-gradient-to-r from-purple-700 to-orange-500 hover:from-purple-800 hover:to-orange-600 text-white px-8 py-3 rounded-full font-bold shadow-md hover:shadow-lg transition-all text-center">
-                            Apply for Gig
-                        </Link>
+                        
+                        {!isOwner && isFreelancer && !hasApplied && (
+                            <ApplicationForm jobId={job.id} />
+                        )}
+                        {!isOwner && isFreelancer && hasApplied && (
+                            <div className="w-full sm:w-auto bg-green-50 text-green-700 px-8 py-3 rounded-full font-bold shadow-sm text-center border border-green-200">
+                                You have applied for this Gig
+                            </div>
+                        )}
+                        {!session && (
+                            <Link href="/login" className="w-full sm:w-auto bg-gray-100 hover:bg-gray-200 text-gray-800 px-8 py-3 rounded-full font-bold shadow-sm transition-all text-center">
+                                Login to Apply
+                            </Link>
+                        )}
                     </div>
 
                 </div>
+
+                {isOwner && job.applications.length > 0 && (
+                    <div className="mt-8 mb-12">
+                        <h2 className="text-2xl font-extrabold text-gray-900 mb-6">Applications ({job.applications.length})</h2>
+                        <div className="space-y-4">
+                            {job.applications.map(app => (
+                                <div key={app.id} className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex flex-col md:flex-row gap-6">
+                                    <div className="flex-1">
+                                        <div className="flex justify-between items-start mb-2">
+                                            <h3 className="font-bold text-lg text-gray-900">{app.freelancer.name} <span className="text-gray-500 text-sm font-normal">({app.freelancer.title})</span></h3>
+                                            <span className="font-bold text-purple-700 bg-purple-50 px-3 py-1 rounded-full text-sm border border-purple-100">${app.bidAmount}</span>
+                                        </div>
+                                        <p className="text-gray-700 whitespace-pre-wrap">{app.coverLetter}</p>
+                                    </div>
+                                    <div className="flex flex-col gap-2 justify-center">
+                                        <Link href={`/freelancers/${app.freelancerId}`} className="text-center bg-gray-100 hover:bg-gray-200 text-gray-800 px-4 py-2 rounded-xl font-bold transition-colors text-sm">View Profile</Link>
+                                        <Link href={`/messages/${app.freelancerId}`} className="text-center bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-xl font-bold transition-colors text-sm">Message</Link>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                )}
 
                 <div className="flex justify-between items-center px-4">
                     <Link href="/jobs" className="text-purple-600 font-bold hover:text-purple-800 transition-colors">

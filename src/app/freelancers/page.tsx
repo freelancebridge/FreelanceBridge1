@@ -1,60 +1,35 @@
 import Link from 'next/link';
 import { Suspense } from 'react';
 import SearchInput from '@/components/SearchInput';
+import prisma from '@/lib/prisma';
 
 export const dynamic = 'force-dynamic';
 
 export default async function FreelancersList({ searchParams }: { searchParams: Promise<{ q?: string }> }) {
     const q = (await searchParams).q || '';
 
-    const rawUsers = [
-        {
-            id: '1',
-            name: 'Alice Cooper',
+    const dbUsers = await prisma.user.findMany({
+        where: {
             role: 'FREELANCER',
-            title: 'Full Stack Wizard',
-            hourlyRate: 85,
-            skills: 'React, Node.js, Prisma',
-            reviewsReceived: [{ rating: 5 }, { rating: 4 }, { rating: 5 }],
-            createdAt: new Date('2023-01-01')
+            isBanned: false,
+            ...(q ? {
+                OR: [
+                    { name: { contains: q } },
+                    { title: { contains: q } },
+                    { skills: { contains: q } }
+                ]
+            } : {})
         },
-        {
-            id: '2',
-            name: 'Bob Builder',
-            role: 'FREELANCER',
-            title: 'UI/UX Designer',
-            hourlyRate: 65,
-            skills: 'Figma, Tailwind, CSS',
-            reviewsReceived: [{ rating: 5 }, { rating: 5 }],
-            createdAt: new Date('2023-02-01')
-        },
-        {
-            id: '3',
-            name: 'Charlie Code',
-            role: 'FREELANCER',
-            title: 'Backend Engineer',
-            hourlyRate: 95,
-            skills: 'Python, Django, PostgreSQL',
-            reviewsReceived: [{ rating: 4 }, { rating: 4 }, { rating: 5 }],
-            createdAt: new Date('2023-03-01')
+        include: {
+            reviewsReceived: true
         }
-    ];
-
-    const users = rawUsers.filter(user => {
-        if (!q) return true;
-        const search = q.toLowerCase();
-        return (
-            (user.name && user.name.toLowerCase().includes(search)) ||
-            (user.title && user.title.toLowerCase().includes(search)) ||
-            (user.skills && user.skills.toLowerCase().includes(search))
-        );
     });
 
-    const wizards = users.map(user => {
+    const wizards = dbUsers.map(user => {
         const ratingCount = user.reviewsReceived.length;
         const avgRating = ratingCount > 0
             ? user.reviewsReceived.reduce((sum, r) => sum + r.rating, 0) / ratingCount
-            : 5.0;
+            : 5.0; // default rating if none
 
         return {
             id: user.id,
@@ -62,7 +37,7 @@ export default async function FreelancersList({ searchParams }: { searchParams: 
             title: user.title || 'Independent Creator',
             rate: user.hourlyRate ? `$${user.hourlyRate}/hr` : 'Negotiable',
             rating: avgRating.toFixed(1),
-            earned: 'New',
+            earned: ratingCount > 0 ? `${ratingCount} jobs` : 'New',
             skills: user.skills ? user.skills.split(',').map(s => s.trim()) : ['Adaptable']
         };
     });

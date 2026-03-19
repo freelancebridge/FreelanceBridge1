@@ -34,7 +34,7 @@ export default function Register() {
     const router = useRouter();
     const [step, setStep] = useState<1 | 2>(1);
     const [userType, setUserType] = useState<'CLIENT' | 'FREELANCER' | null>(null);
-    const [formData, setFormData] = useState({ firstName: '', lastName: '', email: '', password: '', country: 'United States of America' });
+    const [formData, setFormData] = useState({ firstName: '', lastName: '', email: '', password: '', country: 'United States of America', title: '', skills: '', hourlyRate: '', bio: '' });
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
 
@@ -51,7 +51,11 @@ export default function Register() {
                     name: `${formData.firstName} ${formData.lastName}`.trim(),
                     email: formData.email,
                     password: formData.password,
-                    role: userType
+                    role: userType,
+                    title: userType === 'FREELANCER' ? formData.title : null,
+                    skills: userType === 'FREELANCER' ? formData.skills : null,
+                    hourlyRate: userType === 'FREELANCER' && formData.hourlyRate ? parseFloat(formData.hourlyRate) : null,
+                    bio: userType === 'FREELANCER' ? formData.bio : null,
                 }),
             });
 
@@ -136,6 +140,17 @@ export default function Register() {
                             </div>
                             <input type="email" placeholder="Email Address" required value={formData.email} onChange={(e) => setFormData({ ...formData, email: e.target.value })} className="w-full px-4 py-3 border border-gray-300 rounded-xl" />
                             <input type="password" placeholder="Password" required value={formData.password} onChange={(e) => setFormData({ ...formData, password: e.target.value })} className="w-full px-4 py-3 border border-gray-300 rounded-xl" />
+                            
+                            {userType === 'FREELANCER' && (
+                                <div className="space-y-6 border-t border-gray-200 pt-6 mt-6">
+                                    <h3 className="text-lg font-bold text-gray-900">Professional Details</h3>
+                                    <input type="text" placeholder="Professional Title (e.g. Senior UX Designer)" required value={formData.title} onChange={(e) => setFormData({ ...formData, title: e.target.value })} className="w-full px-4 py-3 border border-gray-300 rounded-xl" />
+                                    <input type="text" placeholder="Skills (comma separated)" required value={formData.skills} onChange={(e) => setFormData({ ...formData, skills: e.target.value })} className="w-full px-4 py-3 border border-gray-300 rounded-xl" />
+                                    <input type="number" placeholder="Hourly Rate ($)" required min="1" step="0.01" value={formData.hourlyRate} onChange={(e) => setFormData({ ...formData, hourlyRate: e.target.value })} className="w-full px-4 py-3 border border-gray-300 rounded-xl" />
+                                    <textarea placeholder="Short Bio" required rows={3} value={formData.bio} onChange={(e) => setFormData({ ...formData, bio: e.target.value })} className="w-full px-4 py-3 border border-gray-300 rounded-xl"></textarea>
+                                </div>
+                            )}
+
                             <button type="submit" disabled={loading} className="w-full py-4 px-4 rounded-full text-lg font-bold text-white bg-gradient-to-r from-purple-600 to-orange-500 disabled:opacity-70">Blast Off</button>
                             <button type="button" onClick={() => setStep(1)} className="w-full text-center text-sm font-bold text-purple-500">← Go back</button>
                         </form>

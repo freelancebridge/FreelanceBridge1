@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
+import prisma from '@/lib/prisma';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/app/api/auth/[...nextauth]/route';
 
@@ -25,6 +25,18 @@ export async function GET(request: Request) {
                     ]
                 },
                 orderBy: { createdAt: 'asc' }
+            });
+
+            // Mark received unread messages as read
+            await prisma.message.updateMany({
+                where: {
+                    senderId: partnerId,
+                    receiverId: session.user.id,
+                    isRead: false
+                },
+                data: {
+                    isRead: true
+                }
             });
 
             return NextResponse.json(messages);

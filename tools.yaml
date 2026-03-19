@@ -1,0 +1,65 @@
+sources:
+  freelancebridge:
+    kind: "sqlite"
+    database: "C:/Users/tikok/Documents/FreelanceBridge/dev.db"
+
+toolsets:
+  default:
+    - get_freelancers
+    - get_jobs
+    - create_job
+    - send_message
+
+tools:
+  get_freelancers:
+    kind: "sqlite-sql"
+    source: freelancebridge
+    description: "Get all freelancers with their skills and hourly rate"
+    statement: "SELECT id, name, email, title, skills, hourlyRate, bio FROM User WHERE role = 'FREELANCER' AND isBanned = 0"
+
+  get_jobs:
+    kind: "sqlite-sql"
+    source: freelancebridge
+    description: "Get all open jobs"
+    statement: "SELECT j.id, j.title, j.description, j.budget, j.category, j.status FROM Job j WHERE j.status = 'OPEN'"
+
+  create_job:
+    kind: "sqlite-sql"
+    source: freelancebridge
+    description: "Create a new job posting"
+    statement: "INSERT INTO Job (id, title, description, budget, jobType, category, status, clientId, createdAt, updatedAt) VALUES (lower(hex(randomblob(16))), :title, :description, :budget, :jobType, :category, 'OPEN', :clientId, datetime('now'), datetime('now'))"
+    parameters:
+      - name: title
+        type: string
+        description: "Job title"
+      - name: description
+        type: string
+        description: "Job description"
+      - name: budget
+        type: float
+        description: "Budget amount"
+      - name: jobType
+        type: string
+        description: "Job type"
+      - name: category
+        type: string
+        description: "Job category"
+      - name: clientId
+        type: string
+        description: "Client user ID"
+
+  send_message:
+    kind: "sqlite-sql"
+    source: freelancebridge
+    description: "Send a message between users"
+    statement: "INSERT INTO Message (id, content, senderId, receiverId, createdAt) VALUES (lower(hex(randomblob(16))), :content, :senderId, :receiverId, datetime('now'))"
+    parameters:
+      - name: content
+        type: string
+        description: "Message content"
+      - name: senderId
+        type: string
+        description: "Sender user ID"
+      - name: receiverId
+        type: string
+        description: "Receiver user ID"
