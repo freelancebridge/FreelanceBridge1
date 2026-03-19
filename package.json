@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "next dev",
     "postinstall": "prisma generate",
-    "build": "prisma generate && prisma db push --accept-data-loss && prisma migrate deploy && npx tailwindcss -i ./src/app/globals.css -o ./public/globals.css && npx tailwindcss -i ./src/app/globals.css -o ./src/app/globals.css && next build",
+    "build": "prisma generate && prisma migrate deploy && next build",
     "start": "next start",
     "lint": "next lint"
   },
