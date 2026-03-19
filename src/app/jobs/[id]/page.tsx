@@ -8,22 +8,29 @@ import ApplicationForm from '@/components/ApplicationForm';
 
 export const dynamic = 'force-dynamic';
 
-export default async function JobProfile({ params }: { params: Promise<{ id: string }> }) {
-    const { id } = await params;
+export default async function JobProfile({ params }: { params: { id: string } }) {
+    const { id } = params;
 
-    const job = await prisma.job.findUnique({
-        where: { id },
-        include: {
-            client: true,
-            applications: {
-                include: { freelancer: true },
-                orderBy: { createdAt: 'desc' }
-            },
-            _count: {
-                select: { applications: true }
-            }
+    const job = await (async () => {
+        try {
+            return await prisma.job.findUnique({
+                where: { id },
+                include: {
+                    client: true,
+                    applications: {
+                        include: { freelancer: true },
+                        orderBy: { createdAt: 'desc' }
+                    },
+                    _count: {
+                        select: { applications: true }
+                    }
+                }
+            });
+        } catch (error) {
+            console.error('Database connection error in JobProfile:', error);
+            return null;
         }
-    });
+    })();
 
     if (!job) {
         notFound();

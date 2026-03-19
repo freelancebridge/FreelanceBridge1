@@ -7,29 +7,36 @@ import prisma from '@/lib/prisma';
 
 export const dynamic = 'force-dynamic';
 
-export default async function JobsList({ searchParams }: { searchParams: Promise<{ q?: string }> }) {
-    const q = (await searchParams).q || '';
+export default async function JobsList({ searchParams }: { searchParams: { q?: string } }) {
+    const q = searchParams?.q || '';
 
-    const dbJobs = await prisma.job.findMany({
-        where: {
-            status: 'OPEN',
-            ...(q ? {
-                OR: [
-                    { title: { contains: q } },
-                    { description: { contains: q } },
-                    { category: { contains: q } }
-                ]
-            } : {})
-        },
-        include: {
-            client: true
-        },
-        orderBy: {
-            createdAt: 'desc'
+    const dbJobs = await (async () => {
+        try {
+            return await prisma.job.findMany({
+                where: {
+                    status: 'OPEN',
+                    ...(q ? {
+                        OR: [
+                            { title: { contains: q, mode: 'insensitive' } },
+                            { description: { contains: q, mode: 'insensitive' } },
+                            { category: { contains: q, mode: 'insensitive' } }
+                        ]
+                    } : {})
+                },
+                include: {
+                    client: true
+                },
+                orderBy: {
+                    createdAt: 'desc'
+                }
+            });
+        } catch (error) {
+            console.error('Database connection error in JobsList:', error);
+            return []; // Return empty list instead of crashing
         }
-    });
+    })();
 
-    const gigs = dbJobs.map(job => ({
+    const gigs = dbJobs.map((job: any) => ({
         id: job.id,
         title: job.title,
         client: job.client.companyName || job.client.name || 'Anonymous Client',

@@ -14,21 +14,32 @@ export default async function NotificationsPage() {
         redirect('/login');
     }
 
-    const notifications = await prisma.notification.findMany({
-        where: { userId: session.user.id },
-        orderBy: { createdAt: 'desc' }
-    });
+    const notifications = await (async () => {
+        try {
+            const notifs = await prisma.notification.findMany({
+                where: { userId: session.user.id },
+                orderBy: { createdAt: 'desc' }
+            });
 
-    // Mark all as read
-    await prisma.notification.updateMany({
-        where: {
-            userId: session.user.id,
-            isRead: false
-        },
-        data: {
-            isRead: true
+            // Mark all as read if we could fetch them
+            if (notifs.length > 0) {
+                await prisma.notification.updateMany({
+                    where: {
+                        userId: session.user.id,
+                        isRead: false
+                    },
+                    data: {
+                        isRead: true
+                    }
+                }).catch(e => console.error('Failed to mark notifications as read:', e));
+            }
+
+            return notifs;
+        } catch (error) {
+            console.error('Database error in NotificationsPage:', error);
+            return [];
         }
-    });
+    })();
 
     return (
         <div className="bg-gray-50 min-h-[calc(100vh-64px)] py-10">

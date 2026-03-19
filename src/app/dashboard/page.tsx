@@ -17,15 +17,22 @@ export default async function Dashboard() {
     const { role, id } = session.user;
 
     if (role === 'CLIENT') {
-        const jobs = await prisma.job.findMany({
-            where: { clientId: id },
-            orderBy: { createdAt: 'desc' },
-            include: {
-                _count: {
-                    select: { applications: true }
-                }
+        const jobs = await (async () => {
+            try {
+                return await prisma.job.findMany({
+                    where: { clientId: id },
+                    orderBy: { createdAt: 'desc' },
+                    include: {
+                        _count: {
+                            select: { applications: true }
+                        }
+                    }
+                });
+            } catch (error) {
+                console.error('Database error in Client Dashboard:', error);
+                return [];
             }
-        });
+        })();
 
         return (
             <div className="bg-indigo-50 min-h-[calc(100vh-64px)] py-10">
@@ -84,15 +91,22 @@ export default async function Dashboard() {
     }
 
     // FREELANCER DASHBOARD
-    const applications = await prisma.application.findMany({
-        where: { freelancerId: id },
-        orderBy: { createdAt: 'desc' },
-        include: {
-            job: {
-                include: { client: true }
-            }
+    const applications = await (async () => {
+        try {
+            return await prisma.application.findMany({
+                where: { freelancerId: id },
+                orderBy: { createdAt: 'desc' },
+                include: {
+                    job: {
+                        include: { client: true }
+                    }
+                }
+            });
+        } catch (error) {
+            console.error('Database error in Freelancer Dashboard:', error);
+            return [];
         }
-    });
+    })();
 
     const activeApplications = applications.filter(app => app.status === 'PENDING' || app.status === 'ACCEPTED');
 

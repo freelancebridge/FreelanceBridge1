@@ -4,15 +4,22 @@ import prisma from '@/lib/prisma';
 
 export const dynamic = 'force-dynamic';
 
-export default async function FreelancerProfile({ params }: { params: Promise<{ id: string }> }) {
-    const { id } = await params;
+export default async function FreelancerProfile({ params }: { params: { id: string } }) {
+    const { id } = params;
 
-    const freelancer = await prisma.user.findUnique({
-        where: { id },
-        include: {
-            reviewsReceived: { include: { job: true } }
+    const freelancer = await (async () => {
+        try {
+            return await prisma.user.findUnique({
+                where: { id },
+                include: {
+                    reviewsReceived: { include: { job: true } }
+                }
+            });
+        } catch (error) {
+            console.error('Database connection error in FreelancerProfile:', error);
+            return null;
         }
-    });
+    })();
 
     if (!freelancer || freelancer.role !== 'FREELANCER') {
         notFound();
@@ -20,10 +27,10 @@ export default async function FreelancerProfile({ params }: { params: Promise<{ 
 
     const ratingCount = freelancer.reviewsReceived.length;
     const avgRating = ratingCount > 0
-        ? freelancer.reviewsReceived.reduce((sum, r) => sum + r.rating, 0) / ratingCount
+        ? freelancer.reviewsReceived.reduce((sum: number, r: any) => sum + r.rating, 0) / ratingCount
         : 5.0;
 
-    const mappedSkills = freelancer.skills ? freelancer.skills.split(',').map(s => s.trim()) : ['Adaptable'];
+    const mappedSkills = freelancer.skills ? freelancer.skills.split(',').map((s: string) => s.trim()) : ['Adaptable'];
 
     // Mock portfolio & stats if they don't exist yet, for aesthetic continuity of the design
     const uiData = {
